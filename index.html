@@ -1,0 +1,911 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratorio de Química</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco de laboratorio. Cabecera con pestañas; tabla periódica con ficha atómica fija arriba; laboratorio en dos columnas (estantería | vaso + resultado). */
+:root{
+  --bg:#edf2f0; --surface:#fbfcfb; --surface2:#e2eae7; --fg:#13211e; --muted:#4f625d; --line:#c6d4cf;
+  --accent:#0a6f82; --accent-fg:#ffffff; --good:#217a37; --warn:#a14d06; --bad:#b52424;
+  --h-alk:#e8590c; --h-ale:#e09200; --h-tra:#3b7fc4; --h-pos:#7684a0; --h-met:#2a9a84; --h-non:#33a047;
+  --h-hal:#c2408c; --h-nob:#8a58d0; --h-lan:#b8962a; --h-act:#a4562f; --h-unk:#848c93;
+  --display:'Bricolage Grotesque',system-ui,sans-serif; --body:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1615; --surface:#142120; --surface2:#1b2d2b; --fg:#e5efec; --muted:#95aaa5; --line:#2a3f3c;
+  --accent:#3cc6d8; --accent-fg:#052020; --good:#58c470; --warn:#e8a050; --bad:#f07a7a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1615; --surface:#142120; --surface2:#1b2d2b; --fg:#e5efec; --muted:#95aaa5; --line:#2a3f3c;
+  --accent:#3cc6d8; --accent-fg:#052020; --good:#58c470; --warn:#e8a050; --bad:#f07a7a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--body);padding-block:0 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+sub,sup{line-height:0}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding-block:20px 8px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none;color:var(--accent)}
+h1{font:700 1.55rem/1.1 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav button,.theme{background:none;border:1px solid transparent;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--muted);font-weight:500}
+nav button:hover,.theme:hover{background:var(--surface2);color:var(--fg)}
+nav button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.theme{border-color:var(--line)}
+h2{font:700 1.25rem/1.2 var(--display);margin:0 0 10px;text-wrap:balance}
+h3{font:600 .95rem/1.3 var(--body);margin:0 0 6px}
+.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
+.mono{font-family:var(--mono)}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* ---------- ficha atómica ---------- */
+.detail{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+.atomBox{min-width:0}
+#atomCv{width:100%;aspect-ratio:1/1;display:block;border-radius:12px;background:var(--surface2)}
+.atomCap{font-size:.78rem;color:var(--muted);margin:8px 0 0}
+.legendDots{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;margin-top:6px;color:var(--muted)}
+.legendDots i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.dHead{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.bigSym{font:700 4rem/0.9 var(--display);letter-spacing:-.03em}
+.dName{font:700 1.7rem/1.1 var(--display)}
+.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:600;color:var(--fg);border:1px solid color-mix(in srgb,var(--h,var(--line)) 70%,var(--line));background:color-mix(in srgb,var(--h,var(--surface2)) 22%,var(--surface))}
+.props{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:14px 0}
+.prop{background:var(--surface2);border-radius:8px;padding:8px 10px;min-width:0}
+.prop b{display:block;font:500 1rem var(--mono);overflow-wrap:anywhere}
+.prop span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.expl p{margin:0 0 10px;max-width:70ch}
+.expl{font-size:.93rem}
+.cfg{font-family:var(--mono);font-size:.85rem;overflow-wrap:anywhere}
+
+/* ---------- tabla ---------- */
+.tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:12px}
+.tools label{font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center}
+.tools input,.tools select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.legend button{cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px 3px 8px;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.legend button i{width:10px;height:10px;border-radius:3px;background:var(--h)}
+.legend button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.ptWrap{overflow-x:auto;padding-bottom:6px}
+.pt{display:grid;grid-template-columns:repeat(18,minmax(50px,1fr));grid-template-rows:repeat(7,auto) 14px repeat(2,auto);gap:3px;min-width:960px}
+.cell{grid-row:var(--r);grid-column:var(--c);background:color-mix(in srgb,var(--h) 24%,var(--surface));border:1px solid color-mix(in srgb,var(--h) 60%,var(--line));
+  border-radius:6px;padding:3px 4px 4px;text-align:left;cursor:pointer;display:flex;flex-direction:column;min-width:0;aspect-ratio:1/1.06;transition:opacity .15s,transform .1s}
+.cell:hover{transform:translateY(-2px)}
+.cell[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:1px}
+.cell .z{font:400 .62rem var(--mono);color:var(--muted)}
+.cell .s{font:700 1.1rem/1 var(--display)}
+.cell .n{font-size:.56rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto}
+.cell.dim{opacity:.18}
+.ph{grid-row:var(--r);grid-column:var(--c);border:1px dashed color-mix(in srgb,var(--h) 70%,var(--line));border-radius:6px;font:.62rem var(--mono);display:grid;place-items:center;color:var(--muted);text-align:center}
+.note{font-size:.8rem;color:var(--muted);margin-top:8px}
+
+/* ---------- laboratorio ---------- */
+.lab{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:20px;align-items:start}
+.shelf{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.shelf h3{margin:12px 0 6px}
+.shelf h3:first-of-type{margin-top:0}
+.rgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.rg{cursor:pointer;background:var(--surface2);border:1px solid transparent;border-radius:8px;padding:6px 8px;text-align:left;min-width:0;display:flex;flex-direction:column}
+.rg:hover{border-color:var(--accent)}
+.rg[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--surface))}
+.rg b{font:500 .9rem var(--mono)}
+.rg span{font-size:.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.stageTop{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:18px;align-items:start}
+#labCv{width:100%;aspect-ratio:400/440;display:block;border-radius:12px;background:var(--surface2)}
+.chosen{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;margin:0 0 10px}
+.chosen button{cursor:pointer;background:var(--accent);color:var(--accent-fg);border:0;border-radius:999px;padding:4px 12px;font:500 .85rem var(--mono)}
+.chosen .empty{color:var(--muted);font-size:.85rem;align-self:center}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.btn{cursor:pointer;border-radius:8px;padding:9px 18px;font-weight:600;border:1px solid var(--line);background:var(--surface2)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.status{font-size:.9rem;color:var(--muted);min-height:2.6em}
+.result{margin-top:16px;display:grid;gap:14px}
+.eq{font:500 1.2rem/1.5 var(--mono);background:var(--surface2);border-radius:10px;padding:12px 14px;overflow-x:auto;white-space:nowrap}
+.eq .arrow{color:var(--accent);padding:0 6px;position:relative}
+.eq .arrow small{position:absolute;left:50%;top:-1em;transform:translateX(-50%);font-size:.65rem;color:var(--muted)}
+.eq .co{color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.box p{margin:0;font-size:.9rem}
+.box.warn{border-color:color-mix(in srgb,var(--warn) 60%,var(--line))}
+.box.warn h3{color:var(--warn)}
+table.bal{border-collapse:collapse;font:.85rem var(--mono);width:100%}
+table.bal th,table.bal td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:center}
+table.bal th{font:600 .72rem var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ok{color:var(--good);font-weight:600}
+.tabScroll{overflow-x:auto}
+.sugg{margin-top:22px}
+.suggGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.sg{cursor:pointer;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.sg:hover{border-color:var(--accent)}
+.sg b{display:block;font:500 .85rem var(--mono);overflow-wrap:anywhere}
+.sg span{font-size:.78rem;color:var(--muted)}
+
+/* ---------- conceptos ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card p{margin:0 0 8px;font-size:.9rem}
+.card p:last-child{margin:0}
+.calc{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.calc input{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--mono)}
+
+@media (max-width:900px){
+  .detail{grid-template-columns:minmax(0,1fr)}
+  .lab{grid-template-columns:minmax(0,1fr)}
+  .stageTop{grid-template-columns:minmax(0,1fr)}
+  nav{margin-left:0}
+  .bigSym{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){.cell{transition:none}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3h8M13 3v9L5.5 25.5A2.5 2.5 0 0 0 7.7 29h16.6a2.5 2.5 0 0 0 2.2-3.5L19 12V3"/><path d="M9 21h14"/></svg>
+    <div><h1>Laboratorio de Química</h1><p class="sub">Átomos, propiedades y reacciones explicadas paso a paso</p></div>
+  </div>
+  <nav role="tablist" aria-label="Secciones">
+    <button role="tab" id="tb-tabla" data-tab="tabla">Tabla periódica</button>
+    <button role="tab" id="tb-laboratorio" data-tab="laboratorio">Laboratorio</button>
+    <button role="tab" id="tb-conceptos" data-tab="conceptos">Conceptos</button>
+  </nav>
+  <button class="theme" id="themeBtn" type="button" aria-label="Cambiar tema claro u oscuro">Tema</button>
+</header>
+
+<!-- ===================== TABLA ===================== -->
+<section id="tab-tabla" aria-labelledby="tb-tabla">
+  <div class="detail" id="detail">
+    <div class="atomBox">
+      <canvas id="atomCv" width="340" height="340" aria-label="Modelo de Bohr animado del elemento elegido"></canvas>
+      <p class="atomCap" id="atomCap"></p>
+      <div class="legendDots"><span><i style="background:#e0463c"></i>Protón (+)</span><span><i style="background:#8d99a6"></i>Neutrón (0)</span><span><i style="background:var(--accent)"></i>Electrón de valencia (−)</span><span><i style="background:var(--muted)"></i>Electrón interno (−)</span></div>
+    </div>
+    <div class="info">
+      <div class="dHead"><div class="bigSym" id="dSym"></div><div><div class="dName" id="dName"></div><span class="chip" id="dCat"></span></div></div>
+      <div class="props" id="dProps"></div>
+      <div class="expl" id="dExpl"></div>
+    </div>
+  </div>
+
+  <div class="tools">
+    <label>Buscar <input id="q" type="search" placeholder="Nombre, símbolo o número" autocomplete="off"></label>
+    <label>Colorear por
+      <select id="mode"><option value="fam">Familia</option><option value="estado">Estado a 25 °C</option><option value="en">Electronegatividad</option></select>
+    </label>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="ptWrap"><div class="pt" id="pt"></div></div>
+  <p class="note">Toca un elemento para ver su átomo y sus propiedades. Valores aproximados; en los elementos superpesados (Z ≥ 104) muchas propiedades son predicciones o no se han medido.</p>
+</section>
+
+<!-- ===================== LABORATORIO ===================== -->
+<section id="tab-laboratorio" hidden aria-labelledby="tb-laboratorio">
+  <p class="lead">Elige entre una y tres sustancias de la estantería, échalas en el vaso y pulsa <b>Mezclar</b>. El simulador te dice qué ves, por qué ocurre y comprueba que los átomos se conserven.</p>
+  <div class="lab">
+    <div class="shelf" id="shelf"></div>
+    <div class="stage">
+      <div class="stageTop">
+        <canvas id="labCv" width="400" height="440" aria-label="Vaso de precipitados donde se mezclan las sustancias"></canvas>
+        <div>
+          <div class="eyebrow">En el vaso</div>
+          <div class="chosen" id="chosen"></div>
+          <div class="btns"><button class="btn primary" id="mixBtn" type="button">Mezclar</button><button class="btn" id="clearBtn" type="button">Vaciar vaso</button></div>
+          <div class="status" id="status" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+  <div class="sugg">
+    <h2>Experimentos para empezar</h2>
+    <p class="lead">Toca uno y se prepara y mezcla solo.</p>
+    <div class="suggGrid" id="suggGrid"></div>
+  </div>
+</section>
+
+<!-- ===================== CONCEPTOS ===================== -->
+<section id="tab-conceptos" hidden aria-labelledby="tb-conceptos">
+  <h2>Lo básico para entender el laboratorio</h2>
+  <p class="lead">Seis ideas bastan para leer cualquier reacción de esta página.</p>
+  <div class="cards" id="cards"></div>
+</section>
+</div>
+
+<script>
+/* ===================== DATOS DE ELEMENTOS ===================== */
+const RAW=`1|H|Hidrógeno|1.008|2.20|-259|-253|0.00009
+2|He|Helio|4.0026||-272|-269|0.00018
+3|Li|Litio|6.94|0.98|181|1342|0.534
+4|Be|Berilio|9.0122|1.57|1287|2470|1.85
+5|B|Boro|10.81|2.04|2076|3927|2.34
+6|C|Carbono|12.011|2.55|3550|4027|2.27
+7|N|Nitrógeno|14.007|3.04|-210|-196|0.00125
+8|O|Oxígeno|15.999|3.44|-218|-183|0.00143
+9|F|Flúor|18.998|3.98|-220|-188|0.0017
+10|Ne|Neón|20.180||-249|-246|0.0009
+11|Na|Sodio|22.990|0.93|98|883|0.971
+12|Mg|Magnesio|24.305|1.31|650|1090|1.738
+13|Al|Aluminio|26.982|1.61|660|2519|2.70
+14|Si|Silicio|28.085|1.90|1414|3265|2.33
+15|P|Fósforo|30.974|2.19|44|281|1.82
+16|S|Azufre|32.06|2.58|115|445|2.07
+17|Cl|Cloro|35.45|3.16|-102|-34|0.0032
+18|Ar|Argón|39.948||-189|-186|0.00178
+19|K|Potasio|39.098|0.82|63|759|0.862
+20|Ca|Calcio|40.078|1.00|842|1484|1.55
+21|Sc|Escandio|44.956|1.36|1541|2836|2.99
+22|Ti|Titanio|47.867|1.54|1668|3287|4.51
+23|V|Vanadio|50.942|1.63|1910|3407|6.11
+24|Cr|Cromo|51.996|1.66|1907|2671|7.15
+25|Mn|Manganeso|54.938|1.55|1246|2061|7.44
+26|Fe|Hierro|55.845|1.83|1538|2861|7.87
+27|Co|Cobalto|58.933|1.88|1495|2927|8.86
+28|Ni|Níquel|58.693|1.91|1455|2913|8.91
+29|Cu|Cobre|63.546|1.90|1085|2562|8.96
+30|Zn|Zinc|65.38|1.65|420|907|7.14
+31|Ga|Galio|69.723|1.81|30|2204|5.91
+32|Ge|Germanio|72.630|2.01|938|2833|5.32
+33|As|Arsénico|74.922|2.18|817|614|5.73
+34|Se|Selenio|78.971|2.55|221|685|4.81
+35|Br|Bromo|79.904|2.96|-7|59|3.12
+36|Kr|Kriptón|83.798|3.00|-157|-153|0.00375
+37|Rb|Rubidio|85.468|0.82|39|688|1.53
+38|Sr|Estroncio|87.62|0.95|777|1377|2.64
+39|Y|Itrio|88.906|1.22|1526|2930|4.47
+40|Zr|Circonio|91.224|1.33|1855|4409|6.51
+41|Nb|Niobio|92.906|1.60|2477|4744|8.57
+42|Mo|Molibdeno|95.95|2.16|2623|4639|10.28
+43|Tc|Tecnecio|98|1.90|2157|4265|11
+44|Ru|Rutenio|101.07|2.20|2334|4150|12.45
+45|Rh|Rodio|102.91|2.28|1964|3695|12.41
+46|Pd|Paladio|106.42|2.20|1555|2963|12.02
+47|Ag|Plata|107.87|1.93|962|2162|10.49
+48|Cd|Cadmio|112.41|1.69|321|767|8.65
+49|In|Indio|114.82|1.78|157|2072|7.31
+50|Sn|Estaño|118.71|1.96|232|2602|7.31
+51|Sb|Antimonio|121.76|2.05|631|1587|6.70
+52|Te|Telurio|127.60|2.10|450|988|6.24
+53|I|Yodo|126.90|2.66|114|184|4.93
+54|Xe|Xenón|131.29|2.60|-112|-108|0.0059
+55|Cs|Cesio|132.91|0.79|28|671|1.93
+56|Ba|Bario|137.33|0.89|727|1845|3.62
+57|La|Lantano|138.91|1.10|920|3464|6.15
+58|Ce|Cerio|140.12|1.12|795|3443|6.77
+59|Pr|Praseodimio|140.91|1.13|935|3520|6.77
+60|Nd|Neodimio|144.24|1.14|1024|3074|7.01
+61|Pm|Prometio|145|1.13|1042|3000|7.26
+62|Sm|Samario|150.36|1.17|1072|1794|7.52
+63|Eu|Europio|151.96|1.20|826|1529|5.24
+64|Gd|Gadolinio|157.25|1.20|1312|3273|7.90
+65|Tb|Terbio|158.93|1.10|1356|3230|8.23
+66|Dy|Disprosio|162.50|1.22|1407|2567|8.55
+67|Ho|Holmio|164.93|1.23|1461|2720|8.80
+68|Er|Erbio|167.26|1.24|1529|2868|9.07
+69|Tm|Tulio|168.93|1.25|1545|1950|9.32
+70|Yb|Iterbio|173.05|1.10|824|1196|6.90
+71|Lu|Lutecio|174.97|1.27|1652|3402|9.84
+72|Hf|Hafnio|178.49|1.30|2233|4603|13.31
+73|Ta|Tántalo|180.95|1.50|3017|5458|16.65
+74|W|Wolframio|183.84|2.36|3422|5555|19.25
+75|Re|Renio|186.21|1.90|3186|5596|21.02
+76|Os|Osmio|190.23|2.20|3033|5012|22.59
+77|Ir|Iridio|192.22|2.20|2446|4428|22.56
+78|Pt|Platino|195.08|2.28|1768|3825|21.45
+79|Au|Oro|196.97|2.54|1064|2856|19.30
+80|Hg|Mercurio|200.59|2.00|-39|357|13.53
+81|Tl|Talio|204.38|1.62|304|1473|11.85
+82|Pb|Plomo|207.2|2.33|327|1749|11.34
+83|Bi|Bismuto|208.98|2.02|271|1564|9.78
+84|Po|Polonio|209|2.00|254|962|9.2
+85|At|Astato|210|2.20|302|337|
+86|Rn|Radón|222||-71|-62|0.0097
+87|Fr|Francio|223|0.70|27|677|
+88|Ra|Radio|226|0.90|700|1737|5.5
+89|Ac|Actinio|227|1.10|1050|3200|10.07
+90|Th|Torio|232.04|1.30|1750|4788|11.72
+91|Pa|Protactinio|231.04|1.50|1572|4000|15.37
+92|U|Uranio|238.03|1.38|1135|4131|19.05
+93|Np|Neptunio|237|1.36|644|3900|20.45
+94|Pu|Plutonio|244|1.28|640|3228|19.85
+95|Am|Americio|243|1.13|1176|2607|12
+96|Cm|Curio|247|1.28|1345|3110|13.51
+97|Bk|Berquelio|247|1.30|986|2627|14.78
+98|Cf|Californio|251|1.30|900|1470|15.1
+99|Es|Einstenio|252|1.30|860|996|8.84
+100|Fm|Fermio|257|1.30|1527||
+101|Md|Mendelevio|258|1.30|827||
+102|No|Nobelio|259|1.30|827||
+103|Lr|Lawrencio|266|1.30|1627||
+104|Rf|Rutherfordio|267||||
+105|Db|Dubnio|268||||
+106|Sg|Seaborgio|269||||
+107|Bh|Bohrio|270||||
+108|Hs|Hassio|277||||
+109|Mt|Meitnerio|278||||
+110|Ds|Darmstatio|281||||
+111|Rg|Roentgenio|282||||
+112|Cn|Copernicio|285||||
+113|Nh|Nihonio|286||||
+114|Fl|Flerovio|289||||
+115|Mc|Moscovio|290||||
+116|Lv|Livermorio|293||||
+117|Ts|Teneso|294||||
+118|Og|Oganesón|294||||`;
+const num=v=>v===''||v===undefined?null:+v;
+const EL=RAW.trim().split('\n').map(l=>{const a=l.split('|');return{z:+a[0],s:a[1],n:a[2],m:+a[3],en:num(a[4]),mp:num(a[5]),bp:num(a[6]),d:num(a[7])}});
+const BYSYM=Object.fromEntries(EL.map(e=>[e.s,e]));
+
+const CATS={alk:'Metal alcalino',ale:'Alcalinotérreo',tra:'Metal de transición',pos:'Metal postransicional',met:'Metaloide',non:'No metal',hal:'Halógeno',nob:'Gas noble',lan:'Lantánido',act:'Actínido',unk:'Sin clasificar'};
+const SETS={alk:[3,11,19,37,55,87],ale:[4,12,20,38,56,88],non:[1,6,7,8,15,16,34],hal:[9,17,35,53,117],nob:[2,10,18,36,54,86,118],met:[5,14,32,33,51,52,85],pos:[13,31,49,50,81,82,83,84,113,114,115,116]};
+function catOf(z){
+  for(const k in SETS) if(SETS[k].includes(z)) return k;
+  if(z>=57&&z<=71) return 'lan'; if(z>=89&&z<=103) return 'act';
+  if((z>=21&&z<=30)||(z>=39&&z<=48)||(z>=72&&z<=80)||(z>=104&&z<=112)) return 'tra';
+  return 'unk';
+}
+function pos(z){
+  if(z===1)return[1,1]; if(z===2)return[1,18];
+  if(z<=4)return[2,z-2]; if(z<=10)return[2,z+8];
+  if(z<=12)return[3,z-10]; if(z<=18)return[3,z];
+  if(z<=36)return[4,z-18]; if(z<=54)return[5,z-36];
+  if(z<=56)return[6,z-54]; if(z<=71)return[9,z-57+3];
+  if(z<=86)return[6,z-68]; if(z<=88)return[7,z-86];
+  if(z<=103)return[10,z-89+3]; return[7,z-100];
+}
+EL.forEach(e=>{e.cat=catOf(e.z);[e.row,e.col]=pos(e.z);e.n_=Math.max(0,Math.round(e.m)-e.z);
+  e.st=e.mp===null?'unk':(e.mp>25?'sol':(e.bp!==null&&e.bp<25?'gas':'liq'));
+  if(e.z===85||e.z===87)e.st='sol'; if(e.z>=100&&e.z<=103)e.st='sol';});
+
+const ORDER=[[1,'s',2],[2,'s',2],[2,'p',6],[3,'s',2],[3,'p',6],[4,'s',2],[3,'d',10],[4,'p',6],[5,'s',2],[4,'d',10],[5,'p',6],[6,'s',2],[4,'f',14],[5,'d',10],[6,'p',6],[7,'s',2],[5,'f',14],[6,'d',10],[7,'p',6]];
+const OVR={24:[2,8,13,1],29:[2,8,18,1],41:[2,8,18,12,1],42:[2,8,18,13,1],44:[2,8,18,15,1],45:[2,8,18,16,1],46:[2,8,18,18],47:[2,8,18,18,1],57:[2,8,18,18,9,2],58:[2,8,18,19,9,2],64:[2,8,18,25,9,2],78:[2,8,18,32,17,1],79:[2,8,18,32,18,1],89:[2,8,18,32,18,9,2],90:[2,8,18,32,18,10,2],91:[2,8,18,32,20,9,2],92:[2,8,18,32,21,9,2],93:[2,8,18,32,22,9,2],96:[2,8,18,32,25,9,2],103:[2,8,18,32,32,8,3]};
+function aufbau(z){let left=z;const cfg=[],sh=[];for(const[n,l,c]of ORDER){if(left<=0)break;const e=Math.min(c,left);left-=e;cfg.push({n,l,e});sh[n-1]=(sh[n-1]||0)+e;}return{cfg,sh:Array.from(sh,x=>x||0)};}
+function shellsOf(z){return OVR[z]||aufbau(z).sh;}
+function valenceOf(e){ if(e.z===2)return 2; if(e.col<=2)return e.col; if(e.col>=13&&e.row<=7&&e.cat!=='lan'&&e.cat!=='act')return e.col-10; return null;}
+const sup=n=>String(n).replace(/\d/g,d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]);
+
+const FUN={
+1:'El elemento más abundante del universo. Es el combustible de las estrellas y forma parte del agua.',
+2:'Gas noble que no reacciona. Se usa en globos, en resonancias magnéticas y para enfriar equipos cerca del cero absoluto.',
+3:'El metal más ligero. Alimenta las baterías de teléfonos y autos eléctricos.',
+5:'Se usa en vidrio resistente al calor (borosilicato) y en detergentes.',
+6:'Base de la química orgánica y de la vida. Según cómo se enlacen sus átomos forma grafito, diamante o grafeno.',
+7:'Compone el 78 % del aire. Es esencial en proteínas y ADN, y se usa en fertilizantes.',
+8:'Compone el 21 % del aire. Hace falta para respirar y para que algo arda.',
+9:'Es el elemento más electronegativo. Está en el teflón y en el fluoruro de la pasta dental.',
+10:'Gas noble que brilla naranja-rojizo en los letreros de neón.',
+11:'Metal blando que reacciona con violencia con el agua. Unido al cloro forma la sal de mesa.',
+12:'Arde con una luz blanca muy intensa. Está en el centro de la molécula de clorofila.',
+13:'Metal ligero que se protege con una capa de óxido. Se usa en latas, aviones y cables.',
+14:'Es la base de la arena, el vidrio y los chips electrónicos.',
+15:'Forma parte del ADN y del ATP. Se usa en fertilizantes y en las cabezas de los fósforos.',
+16:'Sólido amarillo típico de los volcanes. Sirve para fabricar ácido sulfúrico.',
+17:'Gas verdoso que desinfecta el agua. Con sodio forma la sal común.',
+18:'Tercer componente del aire (alrededor del 1 %). Se usa como gas protector en soldadura.',
+19:'Esencial para nervios y músculos. Reacciona con el agua y da una llama lila.',
+20:'Forma huesos, dientes y conchas marinas (carbonato de calcio).',
+22:'Resistente, ligero y compatible con el cuerpo humano. Se usa en prótesis y aviones.',
+26:'Con carbono forma el acero. Se oxida y produce herrumbre.',
+27:'Sus compuestos dan el azul cobalto a vidrios y cerámicas.',
+29:'Gran conductor eléctrico. Con el tiempo se cubre de una pátina verde.',
+30:'Protege al hierro de la corrosión (galvanizado) y es necesario para muchas enzimas.',
+35:'Es uno de los dos elementos líquidos a temperatura ambiente. Es rojizo y de olor fuerte.',
+47:'Es el mejor conductor eléctrico y térmico de todos los metales.',
+50:'Se usa en soldaduras y latas. Con cobre forma bronce.',
+53:'Esencial para la tiroides. Sus vapores son violeta.',
+74:'Tiene el punto de fusión más alto de todos los metales. Por eso se usa en filamentos.',
+78:'Metal precioso que actúa como catalizador en el escape de los autos.',
+79:'No se oxida ni se empaña. Se usa en joyería y electrónica.',
+80:'Único metal líquido a temperatura ambiente. Es muy tóxico.',
+82:'Metal denso y tóxico que se usaba en tuberías y pinturas.',
+86:'Gas noble radiactivo que puede acumularse en sótanos mal ventilados.',
+88:'Lo descubrieron Marie y Pierre Curie. Emite luz tenue por su radiactividad.',
+92:'Es el elemento natural más pesado. Se usa como combustible en reactores nucleares.',
+118:'Es el elemento más pesado conocido. Solo se han producido unos pocos átomos, que duran menos de un milisegundo.'};
+const CATTXT={alk:'Los metales alcalinos tienen un solo electrón de valencia y lo ceden con facilidad, por eso son muy reactivos.',ale:'Los alcalinotérreos tienen dos electrones de valencia. Son reactivos, aunque menos que los alcalinos.',tra:'Los metales de transición conducen bien la electricidad, suelen ser duros y forman compuestos de colores con varios estados de oxidación.',pos:'Son metales más blandos y de punto de fusión bajo que los de transición.',met:'Los metaloides tienen propiedades intermedias entre metales y no metales. Muchos son semiconductores.',non:'Los no metales suelen ganar o compartir electrones. No conducen bien la electricidad.',hal:'Los halógenos tienen siete electrones de valencia y capturan uno con mucha facilidad. Forman sales con los metales.',nob:'Los gases nobles tienen la última capa completa, por eso casi no reaccionan.',lan:'Las tierras raras se parecen mucho entre sí. Se usan en imanes, pantallas y láseres.',act:'Los actínidos son radiactivos. Los más pesados solo existen si se fabrican en aceleradores o reactores.',unk:'Es un elemento sintético y muy inestable. Sus propiedades se estiman con modelos teóricos.'};
+
+/* ===================== UTILIDADES ===================== */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmtF=f=>f.replace(/(\d+)/g,'<sub>$1</sub>');
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtN=(v,u,digits=3)=>v===null||v===undefined?'—':(Math.abs(v)<0.01&&v!==0?v.toExponential(1):(+v.toPrecision(digits)).toLocaleString('es'))+(u?' '+u:'');
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function parseF(f){
+  const st=[{}];let i=0;
+  while(i<f.length){
+    const c=f[i];
+    if(c==='('){st.push({});i++;}
+    else if(c===')'){i++;let m='';while(/\d/.test(f[i]||''))m+=f[i++];const top=st.pop(),mul=+m||1,cur=st[st.length-1];for(const k in top)cur[k]=(cur[k]||0)+top[k]*mul;}
+    else{const mm=/^[A-Z][a-z]?/.exec(f.slice(i));if(!mm)throw new Error('Carácter no válido: '+c);const el=mm[0];i+=el.length;let m='';while(/\d/.test(f[i]||''))m+=f[i++];st[st.length-1][el]=(st[st.length-1][el]||0)+(+m||1);}
+  }
+  return st[0];
+}
+function side(list){const t={};list.forEach(([c,f])=>{const p=parseF(f);for(const k in p)t[k]=(t[k]||0)+p[k]*c;});return t;}
+function balanced(rx){const a=side(rx.lhs),b=side(rx.rhs);const ks=new Set([...Object.keys(a),...Object.keys(b)]);return[...ks].every(k=>a[k]===b[k]);}
+
+/* ===================== PESTAÑAS ===================== */
+const TABS=['tabla','laboratorio','conceptos'];
+function showTab(t){
+  if(!TABS.includes(t))t='tabla';
+  TABS.forEach(n=>{$('#tab-'+n).hidden=n!==t;$('#tb-'+n).setAttribute('aria-selected',String(n===t));});
+  if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);
+  if(t==='laboratorio')sizeCanvases();
+}
+$$('nav button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
+$('#themeBtn').addEventListener('click',()=>{
+  const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme=dark?'light':'dark';
+});
+
+/* ===================== TABLA PERIÓDICA ===================== */
+let sel=EL[5], mode='fam', activeCat=null, query='';
+const stColors={sol:'#6f7f95',liq:'#2f8fd0',gas:'#d9683a',unk:'#848c93'};
+const stNames={sol:'Sólido',liq:'Líquido',gas:'Gas',unk:'Desconocido'};
+function colorOf(e){
+  if(mode==='fam')return `var(--h-${e.cat})`;
+  if(mode==='estado')return stColors[e.st];
+  if(e.en===null)return 'var(--h-unk)';
+  const t=Math.min(1,Math.max(0,(e.en-0.7)/3.3));return `hsl(${Math.round(215-195*t)} 68% 50%)`;
+}
+function buildTable(){
+  const pt=$('#pt');pt.innerHTML='';
+  EL.forEach(e=>{
+    const b=document.createElement('button');b.className='cell';b.type='button';b.dataset.z=e.z;
+    b.style.setProperty('--r',e.row);b.style.setProperty('--c',e.col);
+    b.innerHTML=`<span class="z">${e.z}</span><span class="s">${e.s}</span><span class="n">${e.n}</span>`;
+    b.setAttribute('aria-label',`${e.n}, número atómico ${e.z}`);
+    b.addEventListener('click',()=>{selectEl(e);const d=$('#detail').getBoundingClientRect();if(d.top<0||d.bottom>innerHeight)$('#detail').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});});
+    pt.appendChild(b);
+  });
+  [['57–71',6,'lan'],['89–103',7,'act']].forEach(([t,r,c])=>{const d=document.createElement('div');d.className='ph';d.style.setProperty('--r',r);d.style.setProperty('--c',3);d.style.setProperty('--h',`var(--h-${c})`);d.textContent=t;pt.appendChild(d);});
+  paintTable();
+}
+function paintTable(){
+  $$('.cell').forEach(b=>{
+    const e=EL[b.dataset.z-1];
+    b.style.setProperty('--h',colorOf(e));
+    b.setAttribute('aria-pressed',String(e===sel));
+    const hitQ=!query||e.n.toLowerCase().includes(query)||e.s.toLowerCase()===query||String(e.z)===query;
+    const hitC=!activeCat||(mode==='fam'?e.cat===activeCat:mode==='estado'?e.st===activeCat:true);
+    b.classList.toggle('dim',!(hitQ&&hitC));
+  });
+  const lg=$('#legend');lg.innerHTML='';
+  if(mode==='en'){lg.innerHTML='<span class="note" style="margin:0">Azul: baja electronegatividad (cede electrones) → rojo: alta (atrae electrones). Gris: sin valor.</span>';return;}
+  const items=mode==='fam'?Object.entries(CATS).map(([k,v])=>[k,v,`var(--h-${k})`]):Object.entries(stNames).map(([k,v])=>[k,v,stColors[k]]);
+  items.forEach(([k,v,c])=>{const b=document.createElement('button');b.type='button';b.style.setProperty('--h',c);b.innerHTML=`<i></i>${v}`;b.setAttribute('aria-pressed',String(activeCat===k));b.addEventListener('click',()=>{activeCat=activeCat===k?null:k;paintTable();});lg.appendChild(b);});
+}
+$('#mode').addEventListener('change',e=>{mode=e.target.value;activeCat=null;paintTable();});
+$('#q').addEventListener('input',e=>{query=e.target.value.trim().toLowerCase();paintTable();});
+
+function selectEl(e){
+  sel=e;paintTable();
+  const sh=shellsOf(e.z),val=valenceOf(e),cat=CATS[e.cat];
+  $('#dSym').textContent=e.s;$('#dName').textContent=e.n;
+  const chip=$('#dCat');chip.textContent=cat;chip.style.setProperty('--h',`var(--h-${e.cat})`);
+  const P=[['Número atómico (Z)',e.z],['Masa atómica',fmtN(e.m,'u',5)],['Protones',e.z],['Neutrones (isótopo común)',e.n_],['Electrones (átomo neutro)',e.z],
+    ['Capas de electrones',sh.join(' · ')],['Electrones de valencia',val===null?'variable':val],['Electronegatividad',e.en===null?'—':e.en.toFixed(2)],
+    ['Punto de fusión',fmtN(e.mp,'°C',4)],['Punto de ebullición',fmtN(e.bp,'°C',4)],['Densidad',fmtN(e.d,'g/cm³',3)],['Estado a 25 °C',stNames[e.st]],['Grupo · Período',(e.cat==='lan'||e.cat==='act')?'f-block · '+(e.cat==='lan'?6:7):e.col+' · '+e.row]];
+  $('#dProps').innerHTML=P.map(([k,v])=>`<div class="prop"><span>${k}</span><b>${v}</b></div>`).join('');
+  // explicación
+  let h=`<p>${FUN[e.z]||CATTXT[e.cat]}</p>`;
+  h+=`<p><b>Cómo es su átomo.</b> Tiene ${e.z} protón${e.z>1?'es':''} en el núcleo, que fijan su identidad: si cambia ese número, cambia el elemento. Para ser neutro tiene ${e.z} electrones repartidos en ${sh.length} capa${sh.length>1?'s':''} (${sh.join(', ')}). Cada capa tiene un máximo de electrones, y los de la última capa son los que participan en las reacciones.</p>`;
+  if(val!==null){
+    let t;
+    if(e.z===2||e.col===18)t='Tiene su última capa completa, así que es muy estable y casi no forma compuestos.';
+    else if(val<=3)t=`Tiende a perder ${val} electrón${val>1?'es':''} y formar un ion positivo (carga +${val}).`;
+    else if(val===4)t='Tiende a compartir sus 4 electrones y formar enlaces covalentes.';
+    else t=`Tiende a ganar ${8-val} electrón${8-val>1?'es':''} para completar ocho y formar un ion negativo (carga −${8-val}) o a compartirlos en enlaces covalentes.`;
+    h+=`<p><b>Cómo reacciona.</b> Con ${val} electrón${val>1?'es':''} de valencia. ${t}</p>`;
+  }else if(e.cat==='tra'||e.cat==='lan'||e.cat==='act'){
+    h+=`<p><b>Cómo reacciona.</b> Sus electrones de valencia están repartidos entre varias capas, por eso puede formar iones con distintas cargas (varios estados de oxidación).</p>`;
+  }
+  if(OVR[e.z])h+=`<p class="note" style="margin:0"><b>Excepción:</b> la regla de llenado (Aufbau) predice otra distribución. Aquí se muestra la distribución real medida.</p>`;
+  if(e.z>=104)h+=`<p class="note" style="margin:0">Estas propiedades son estimaciones: el elemento es sintético y su vida es muy corta.</p>`;
+  const a=aufbau(e.z);
+  h+=`<p class="cfg"><b style="font-family:var(--body)">Configuración (orden de llenado):</b> ${a.cfg.map(c=>c.n+c.l+sup(c.e)).join(' ')}${OVR[e.z]?' (predicha)':''}</p>`;
+  $('#dExpl').innerHTML=h;
+  $('#atomCap').textContent=`Modelo de Bohr de ${e.n}. No está a escala: el núcleo real es unas 10 000 veces más pequeño que la nube de electrones. ${e.z>40?'Del núcleo se dibuja solo una muestra de las partículas.':''}`;
+  buildNucleus();
+}
+
+/* ---------- animación del átomo ---------- */
+const atomCv=$('#atomCv'),actx=atomCv.getContext('2d');
+let nuc=[];
+function buildNucleus(){
+  const e=sel,tot=e.z+e.n_,show=Math.min(tot,42),pr=Math.round(show*e.z/tot);
+  const arr=[];for(let i=0;i<show;i++)arr.push(i<pr?'p':'n');
+  for(let i=arr.length-1;i>0;i--){const j=(i*7919+13)%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]];}
+  nuc=arr.map((t,i)=>{const r=Math.sqrt(i+.5)*3.6,a=i*2.399963;return{t,x:Math.cos(a)*r,y:Math.sin(a)*r};});
+}
+function sizeCanvases(){
+  [[atomCv],[labCv]].forEach(([c])=>{const dpr=Math.min(2,devicePixelRatio||1),w=c.clientWidth;if(!w)return;const h=Math.round(w*c.height/c.width*(c.dataset.k?1:1));
+    if(!c.dataset.base){c.dataset.base=c.width+','+c.height;}
+    const[bw,bh]=c.dataset.base.split(',').map(Number);const nw=Math.round(w*dpr),nh=Math.round(w*dpr*bh/bw);if(c.width!==nw){c.width=nw;c.height=nh;}});
+}
+function drawAtom(ts){
+  const c=atomCv,W=c.width,H=c.height;if(!W)return;
+  const x=actx;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,H);
+  const s=W/340;x.setTransform(s,0,0,s,0,0);
+  const cx=170,cy=170,sh=shellsOf(sel.z),n=sh.length,line=cssv('--line'),acc=cssv('--accent'),mut=cssv('--muted');
+  const rn=10+Math.min(14,Math.sqrt(sel.z)*1.8),R0=rn+20,R1=160,step=n>1?(R1-R0)/(n-1):0;
+  const t=REDUCED?0:ts/1000;
+  for(let i=0;i<n;i++){
+    const r=n===1?(R0+R1)/2:R0+i*step;
+    x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.strokeStyle=line;x.lineWidth=1.2;x.stroke();
+    const k=sh[i],last=i===n-1,w=(last?.55:.9)/Math.pow(i+1,.55);
+    for(let j=0;j<k;j++){const a=t*w+j*Math.PI*2/k+i*.7;
+      x.beginPath();x.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,last?4.6:3.4,0,Math.PI*2);x.fillStyle=last?acc:mut;x.fill();}
+  }
+  // núcleo
+  const g=x.createRadialGradient(cx,cy,0,cx,cy,rn+8);g.addColorStop(0,'rgba(224,70,60,.35)');g.addColorStop(1,'rgba(224,70,60,0)');
+  x.fillStyle=g;x.beginPath();x.arc(cx,cy,rn+8,0,Math.PI*2);x.fill();
+  const sc=Math.max(.35,Math.min(1,rn/((Math.sqrt(nuc.length)*3.6)+2)*1.05));
+  const pr=Math.max(2.2,Math.min(4,rn*.34));
+  nuc.forEach(p=>{const j=REDUCED?0:Math.sin(t*3+p.x*1.7)*.35;
+    x.beginPath();x.arc(cx+p.x*sc+j,cy+p.y*sc+j,pr,0,Math.PI*2);x.fillStyle=p.t==='p'?'#e0463c':'#8d99a6';x.fill();});
+}
+
+/* ===================== LABORATORIO: DATOS ===================== */
+const CLEAR=[170,210,235,.35];
+const GRP=[
+ ['Ácidos',['HCl','HNO3','CH3COOH']],
+ ['Bases e indicador',['NaOH','CaOH2','PHPH']],
+ ['Sales y soluciones',['NaCl','AgNO3','CuSO4','KI','PbNO32','FeCl3','KSCN','NaHCO3','CaCO3']],
+ ['Metales',['Zn','Mg','Fe','Cu','Na','K']],
+ ['Gases y líquidos',['O2','H2','CO2','CH4','H2O','H2O2']]];
+const RGL=[
+ {id:'HCl',f:'HCl',n:'Ácido clorhídrico',st:'aq',col:[190,225,235,.3],gc:null},
+ {id:'HNO3',f:'HNO3',n:'Ácido nítrico',st:'aq',col:[235,225,170,.32]},
+ {id:'CH3COOH',f:'CH3COOH',n:'Vinagre (ác. acético)',st:'aq',col:[235,225,200,.3]},
+ {id:'NaOH',f:'NaOH',n:'Hidróxido de sodio',st:'aq',col:[190,225,235,.3]},
+ {id:'CaOH2',f:'Ca(OH)2',n:'Agua de cal',st:'aq',col:[190,225,235,.3]},
+ {id:'PHPH',f:'HIn',n:'Fenolftaleína',st:'l',col:[190,225,235,.3]},
+ {id:'NaCl',f:'NaCl',n:'Cloruro de sodio',st:'aq',col:[190,225,235,.3]},
+ {id:'AgNO3',f:'AgNO3',n:'Nitrato de plata',st:'aq',col:[190,225,235,.3]},
+ {id:'CuSO4',f:'CuSO4',n:'Sulfato de cobre(II)',st:'aq',col:[40,120,225,.6]},
+ {id:'KI',f:'KI',n:'Yoduro de potasio',st:'aq',col:[190,225,235,.3]},
+ {id:'PbNO32',f:'Pb(NO3)2',n:'Nitrato de plomo(II)',st:'aq',col:[190,225,235,.3]},
+ {id:'FeCl3',f:'FeCl3',n:'Cloruro de hierro(III)',st:'aq',col:[235,185,50,.55]},
+ {id:'KSCN',f:'KSCN',n:'Tiocianato de potasio',st:'aq',col:[190,225,235,.3]},
+ {id:'NaHCO3',f:'NaHCO3',n:'Bicarbonato de sodio',st:'s',col:[245,245,240,1]},
+ {id:'CaCO3',f:'CaCO3',n:'Carbonato de calcio',st:'s',col:[235,232,222,1]},
+ {id:'Zn',f:'Zn',n:'Zinc (granallas)',st:'s',col:[150,160,170,1]},
+ {id:'Mg',f:'Mg',n:'Magnesio (cinta)',st:'s',col:[200,205,210,1]},
+ {id:'Fe',f:'Fe',n:'Hierro (clavo)',st:'s',col:[95,100,110,1]},
+ {id:'Cu',f:'Cu',n:'Cobre (virutas)',st:'s',col:[205,120,70,1]},
+ {id:'Na',f:'Na',n:'Sodio (trozo)',st:'s',col:[215,220,225,1]},
+ {id:'K',f:'K',n:'Potasio (trozo)',st:'s',col:[205,210,220,1]},
+ {id:'O2',f:'O2',n:'Oxígeno',st:'g',col:[120,190,240,.7]},
+ {id:'H2',f:'H2',n:'Hidrógeno',st:'g',col:[225,225,255,.7]},
+ {id:'CO2',f:'CO2',n:'Dióxido de carbono',st:'g',col:[150,155,165,.7]},
+ {id:'CH4',f:'CH4',n:'Metano',st:'g',col:[240,190,100,.7]},
+ {id:'H2O',f:'H2O',n:'Agua',st:'l',col:[170,210,235,.35]},
+ {id:'H2O2',f:'H2O2',n:'Agua oxigenada',st:'l',col:[190,225,235,.3]}];
+const RG=Object.fromEntries(RGL.map(r=>[r.id,r]));
+const STN={aq:'solución',l:'líquido',s:'sólido',g:'gas'};
+
+const C=(r,g,b,a)=>[r,g,b,a];
+const RX=[
+{id:'neut',r:['HCl','NaOH'],name:'Neutralización ácido-base',type:'Ácido-base',lhs:[[1,'HCl'],[1,'NaOH']],rhs:[[1,'NaCl'],[1,'H2O']],to:CLEAR,fx:{},dT:8,ph:'pH 1 → 13 → 7',
+ see:'No cambia el color ni hay burbujas. Lo que notas es que el vaso se calienta unos grados.',
+ why:'El ácido clorhídrico libera iones H⁺ y el hidróxido de sodio libera iones OH⁻. Los H⁺ y los OH⁻ se unen y forman agua (H⁺ + OH⁻ → H₂O). Los iones Na⁺ y Cl⁻ quedan disueltos: es la sal común. Cuando las cantidades son iguales, la solución queda neutra.',
+ energy:'Exotérmica: al formarse los enlaces del agua se libera calor.',safety:'El ácido y la base concentrados queman la piel. Usa gafas y guantes.'},
+{id:'neutind',r:['HCl','NaOH','PHPH'],name:'Neutralización con indicador',type:'Ácido-base',lhs:[[1,'HCl'],[1,'NaOH']],rhs:[[1,'NaCl'],[1,'H2O']],from:C(225,40,140,.55),to:CLEAR,fx:{},dT:8,skip:true,ph:'pH 13 → 7',
+ see:'El vaso empieza de color magenta intenso y se vuelve transparente a medida que el ácido neutraliza la base.',
+ why:'La fenolftaleína es un indicador: es incolora en medio ácido o neutro y magenta cuando hay exceso de OH⁻ (pH mayor que 8). Mientras queda base, la solución es rosa. Al añadir ácido suficiente, los H⁺ consumen los OH⁻ y la molécula del indicador cambia de forma, por eso pierde el color. Así se detecta el punto final de una titulación. La reacción de fondo es la misma que sin indicador; In representa la molécula del indicador y no se cuenta en el balance.',
+ energy:'Exotérmica, igual que cualquier neutralización.',safety:'Usa gafas y guantes con ácidos y bases.'},
+{id:'zn',r:['Zn','HCl'],name:'Zinc con ácido clorhídrico',type:'Desplazamiento simple (redox)',lhs:[[1,'Zn'],[2,'HCl']],rhs:[[1,'ZnCl2'],[1,'H2']],to:CLEAR,fx:{bub:2.5},dT:5,
+ see:'Salen burbujas de hidrógeno desde el metal, que se va consumiendo. El vaso se calienta un poco.',
+ why:'El zinc es más reactivo que el hidrógeno. Cada átomo de Zn pierde dos electrones (se oxida: Zn → Zn²⁺) y esos electrones los toman los H⁺ del ácido (se reducen: 2H⁺ → H₂). El hidrógeno es un gas y sube en burbujas. Los iones Zn²⁺ y Cl⁻ quedan disueltos como cloruro de zinc.',
+ energy:'Exotérmica moderada.',safety:'El hidrógeno es inflamable. No acerques llamas.'},
+{id:'mgcl',r:['Mg','HCl'],name:'Magnesio con ácido clorhídrico',type:'Desplazamiento simple (redox)',lhs:[[1,'Mg'],[2,'HCl']],rhs:[[1,'MgCl2'],[1,'H2']],to:CLEAR,fx:{bub:4},dT:12,
+ see:'La cinta de magnesio burbujea rápido y desaparece. El vaso se calienta bastante.',
+ why:'Igual que con el zinc, el magnesio cede dos electrones y los H⁺ del ácido los captan para formar H₂. El magnesio es más reactivo que el zinc, así que la reacción es más rápida y libera más calor.',
+ energy:'Exotérmica.',safety:'Hidrógeno inflamable. Trabaja en un lugar ventilado.'},
+{id:'mgo',r:['Mg','O2'],name:'Combustión del magnesio',type:'Síntesis (combinación) y redox',lhs:[[2,'Mg'],[1,'O2']],rhs:[[2,'MgO']],to:CLEAR,fx:{flame:[255,255,245],flash:1,glow:1},dT:62,
+ see:'Una luz blanca muy intensa y un polvo blanco: el óxido de magnesio.',
+ why:'Cada átomo de magnesio cede dos electrones a un átomo de oxígeno. Así se forman iones Mg²⁺ y O²⁻ que se atraen y construyen el óxido de magnesio (MgO), un sólido iónico. La reacción libera tanta energía que parte sale como luz blanca. Antes hay que calentar la cinta para arrancar la reacción.',
+ energy:'Muy exotérmica (más de 3000 °C en la llama).',safety:'No mires la llama directamente: daña la vista. Usa pinzas y gafas oscuras.'},
+{id:'bic',r:['NaHCO3','CH3COOH'],name:'Bicarbonato con vinagre',type:'Ácido-base con desprendimiento de gas',lhs:[[1,'NaHCO3'],[1,'CH3COOH']],rhs:[[1,'CH3COONa'],[1,'H2O'],[1,'CO2']],to:CLEAR,fx:{bub:3.5},dT:-3,
+ see:'Mucha espuma y burbujas de dióxido de carbono. El vaso se enfría un poco.',
+ why:'El vinagre (ácido acético) cede un H⁺ al ion bicarbonato. Se forma ácido carbónico (H₂CO₃), que es inestable y se descompone enseguida en agua y CO₂. Ese gas escapa en burbujas. Queda acetato de sodio disuelto.',
+ energy:'Endotérmica: absorbe calor del entorno, por eso se enfría.',safety:'Es segura. Puede desbordarse: usa un recipiente grande.'},
+{id:'bichcl',r:['NaHCO3','HCl'],name:'Bicarbonato con ácido clorhídrico',type:'Ácido-base con desprendimiento de gas',lhs:[[1,'NaHCO3'],[1,'HCl']],rhs:[[1,'NaCl'],[1,'H2O'],[1,'CO2']],to:CLEAR,fx:{bub:4.5},dT:0,
+ see:'Efervescencia rápida de CO₂. Es el mismo principio de un antiácido en el estómago.',
+ why:'El H⁺ del ácido fuerte se une al HCO₃⁻ del bicarbonato y forma H₂CO₃, que se descompone en H₂O y CO₂. Los antiácidos usan esta reacción para neutralizar el exceso de ácido del estómago.',
+ energy:'Casi sin cambio de temperatura.',safety:'Usa gafas con el ácido.'},
+{id:'agcl',r:['AgNO3','NaCl'],name:'Precipitación de cloruro de plata',type:'Doble desplazamiento (precipitación)',lhs:[[1,'AgNO3'],[1,'NaCl']],rhs:[[1,'AgCl'],[1,'NaNO3']],to:[235,240,245,.55],fx:{prec:[245,245,250]},dT:1,
+ see:'El líquido se enturbia y cae un sólido blanco cuajoso: cloruro de plata.',
+ why:'Las dos sales están disueltas como iones. Los iones Ag⁺ y Cl⁻ forman un compuesto casi insoluble (AgCl) y se agrupan en cristales que caen al fondo (precipitado). Los iones Na⁺ y NO₃⁻ siguen disueltos, no participan: son iones espectadores. Se usa para detectar cloruros en el agua.',
+ energy:'Casi sin cambio de temperatura.',safety:'El nitrato de plata mancha la piel de negro y es irritante.'},
+{id:'fecu',r:['Fe','CuSO4'],name:'Hierro con sulfato de cobre',type:'Desplazamiento simple (redox)',lhs:[[1,'Fe'],[1,'CuSO4']],rhs:[[1,'FeSO4'],[1,'Cu']],to:[150,200,170,.45],fx:{prec:[200,110,60]},dT:3,
+ see:'El azul se va aclarando hasta un verde pálido y el clavo se cubre de cobre rojizo.',
+ why:'El hierro es más reactivo que el cobre. Cada átomo de Fe cede dos electrones (Fe → Fe²⁺) y los iones Cu²⁺ azules los capturan y se convierten en cobre metálico (Cu²⁺ → Cu), que se deposita sobre el hierro. Los iones Fe²⁺ dan un color verde pálido. El azul desaparece porque ya casi no queda Cu²⁺.',
+ energy:'Ligeramente exotérmica.',safety:'El sulfato de cobre es nocivo si se ingiere.'},
+{id:'nah2o',r:['Na','H2O'],name:'Sodio con agua',type:'Desplazamiento simple (redox)',lhs:[[2,'Na'],[2,'H2O']],rhs:[[2,'NaOH'],[1,'H2']],to:CLEAR,fx:{bub:3,flame:[255,170,40]},dT:32,
+ see:'El sodio corre por la superficie, burbujea con fuerza y puede arder con llama amarilla.',
+ why:'Cada átomo de sodio cede su electrón de valencia al agua y forma Na⁺. El agua se reduce y libera hidrógeno gas y iones OH⁻, por lo que la solución se vuelve básica (NaOH). El calor es tan alto que el hidrógeno puede inflamarse. El color amarillo de la llama es la firma del sodio.',
+ energy:'Muy exotérmica.',safety:'Solo se hace con trozos pequeños como un grano de arroz, tras un escudo de protección.'},
+{id:'kh2o',r:['K','H2O'],name:'Potasio con agua',type:'Desplazamiento simple (redox)',lhs:[[2,'K'],[2,'H2O']],rhs:[[2,'KOH'],[1,'H2']],to:CLEAR,fx:{bub:4,flame:[190,120,235]},dT:42,
+ see:'Reacciona más rápido que el sodio y arde casi siempre con llama lila.',
+ why:'El potasio tiene su electrón de valencia más lejos del núcleo que el sodio, así que lo pierde con aún más facilidad. Por eso reacciona más violentamente. La llama lila es la firma del potasio.',
+ energy:'Muy exotérmica.',safety:'Es más peligroso que el sodio. Solo en demostraciones con un docente.'},
+{id:'h2o2',r:['H2O2','KI'],name:'Descomposición catalizada del agua oxigenada',type:'Descomposición (catálisis)',lhs:[[2,'H2O2']],rhs:[[2,'H2O'],[1,'O2']],cat:'KI',to:[235,190,80,.55],fx:{foam:1},dT:28,
+ see:'Una columna de espuma sube rápido y el vaso se calienta. Es la famosa “pasta de dientes de elefante”.',
+ why:'El agua oxigenada se descompone lentamente por sí sola en agua y oxígeno. El yoduro (I⁻) del KI actúa como catalizador: ofrece un camino de menor energía y la reacción se acelera mucho. El catalizador no se consume, por eso no aparece en la ecuación. El oxígeno que se desprende infla la espuma. El tono amarillo viene de algo de yodo formado en el proceso.',
+ energy:'Exotérmica.',safety:'Usa agua oxigenada diluida. Gafas y recipiente amplio.'},
+{id:'pbi2',r:['PbNO32','KI'],name:'Lluvia de oro',type:'Doble desplazamiento (precipitación)',lhs:[[1,'Pb(NO3)2'],[2,'KI']],rhs:[[1,'PbI2'],[2,'KNO3']],to:[250,225,150,.4],fx:{prec:[245,200,20]},dT:1,
+ see:'Aparece un precipitado amarillo brillante que cae en el vaso como copos dorados.',
+ why:'Los iones Pb²⁺ e I⁻ forman yoduro de plomo(II), muy poco soluble en frío, y cristaliza. Los iones K⁺ y NO₃⁻ quedan disueltos. Con calor el sólido se disuelve y al enfriarse vuelve a cristalizar en láminas doradas.',
+ energy:'Casi sin cambio de temperatura.',safety:'El plomo es tóxico. Los residuos se recogen y no se vierten por el desagüe.'},
+{id:'cuoh2',r:['CuSO4','NaOH'],name:'Hidróxido de cobre(II)',type:'Doble desplazamiento (precipitación)',lhs:[[1,'CuSO4'],[2,'NaOH']],rhs:[[1,'Cu(OH)2'],[1,'Na2SO4']],to:[120,170,235,.4],fx:{prec:[70,130,230]},dT:3,
+ see:'Se forma un sólido azul gelatinoso que se hunde. El líquido queda más claro.',
+ why:'Los iones Cu²⁺ se unen a dos iones OH⁻ y forman hidróxido de cobre(II), insoluble. Los iones Na⁺ y SO₄²⁻ no cambian. Esta reacción identifica la presencia de cobre en una solución.',
+ energy:'Ligeramente exotérmica.',safety:'Irritante. Usa guantes y gafas.'},
+{id:'h2o',r:['H2','O2'],name:'Formación del agua',type:'Síntesis (combinación)',lhs:[[2,'H2'],[1,'O2']],rhs:[[2,'H2O']],to:CLEAR,fx:{flame:[150,190,255],flash:1,glow:.7},dT:80,
+ see:'Un estallido y una llama azul pálida. Queda vapor de agua.',
+ why:'Los enlaces H–H y O=O se rompen (eso requiere una chispa) y los átomos se reorganizan en enlaces O–H, mucho más fuertes. La diferencia de energía sale de golpe como calor y sonido. Por eso los motores de cohete de hidrógeno solo emiten vapor de agua.',
+ energy:'Muy exotérmica.',safety:'La mezcla hidrógeno-oxígeno es explosiva. Solo en cantidades mínimas y con protección.'},
+{id:'caco3',r:['CaCO3','HCl'],name:'Caliza con ácido',type:'Ácido-base con desprendimiento de gas',lhs:[[1,'CaCO3'],[2,'HCl']],rhs:[[1,'CaCl2'],[1,'H2O'],[1,'CO2']],to:CLEAR,fx:{bub:3},dT:2,
+ see:'El sólido burbujea y se va disolviendo.',
+ why:'El ion carbonato (CO₃²⁻) toma dos H⁺ del ácido y forma ácido carbónico, que se descompone en agua y CO₂. Es lo que hacen las gotas ácidas sobre la roca caliza o el mármol y por eso las estatuas se erosionan con la lluvia ácida. También sirve para identificar carbonatos.',
+ energy:'Ligeramente exotérmica.',safety:'Gafas con el ácido.'},
+{id:'ch4',r:['CH4','O2'],name:'Combustión del metano',type:'Combustión (redox)',lhs:[[1,'CH4'],[2,'O2']],rhs:[[1,'CO2'],[2,'H2O']],to:CLEAR,fx:{flame:[70,130,255],glow:.6},dT:50,
+ see:'Llama azul estable. El vaso se calienta y aparece vapor de agua.',
+ why:'El carbono y el hidrógeno del metano se combinan con el oxígeno del aire. Los enlaces C–H y O=O se rompen y se forman enlaces C=O y O–H, más estables. La diferencia de energía sale como calor y luz. Es la reacción de la cocina de gas. La llama azul indica combustión completa.',
+ energy:'Muy exotérmica.',safety:'Metano inflamable. Fuente de ignición controlada y ventilación.'},
+{id:'fescn',r:['FeCl3','KSCN'],name:'Complejo rojo sangre de hierro',type:'Formación de un ion complejo',lhs:[[1,'FeCl3'],[1,'KSCN']],rhs:[[1,'Fe(SCN)Cl2'],[1,'KCl']],to:[190,30,40,.7],fx:{},dT:1,
+ see:'El líquido amarillo pasa de golpe a rojo intenso.',
+ why:'El ion Fe³⁺ se une al ion tiocianato (SCN⁻) y forma un ion complejo, [Fe(SCN)]²⁺. Los complejos absorben luz de otro modo que los iones sueltos y por eso cambian el color: aquí absorbe el azul-verde y el líquido se ve rojo. Es una prueba clásica para detectar hierro(III).',
+ energy:'Casi sin cambio de temperatura.',safety:'Irritante. Guantes y gafas.'},
+{id:'ind',r:['NaOH','PHPH'],name:'Fenolftaleína en medio básico',type:'Indicador ácido-base',lhs:[[1,'PHPH']],rhs:[[1,'PHPH']],to:[225,40,140,.55],fx:{},dT:2,skip:true,ph:'pH ≈ 13',
+ see:'El líquido incoloro se vuelve magenta.',
+ why:'La fenolftaleína es incolora en medio ácido o neutro. En medio básico pierde un H⁺, cambia la forma de su molécula y absorbe luz verde, por lo que se ve magenta. No es una reacción nueva entre sustancias distintas, es el indicador respondiendo al pH. Agrega ácido clorhídrico y verás cómo vuelve a ser incolora.',
+ energy:'Casi sin cambio de temperatura.',safety:'Guantes y gafas con la base.'},
+{id:'cuhno3',r:['Cu','HNO3'],name:'Cobre con ácido nítrico',type:'Redox con desprendimiento de gas',lhs:[[1,'Cu'],[4,'HNO3']],rhs:[[1,'Cu(NO3)2'],[2,'NO2'],[2,'H2O']],to:[40,170,170,.6],fx:{vapor:[170,85,20],bub:1.5},dT:15,
+ see:'La solución se vuelve verde-azulada y sale un gas pardo-rojizo muy tóxico.',
+ why:'El ácido nítrico es oxidante: quita electrones al cobre (Cu → Cu²⁺, que da el color verde-azulado) y el nitrógeno del nitrato se reduce a dióxido de nitrógeno (NO₂), el gas pardo. Es una de las pocas reacciones en que un metal poco reactivo se disuelve en un ácido, porque aquí el oxidante es el nitrato y no el H⁺.',
+ energy:'Exotérmica.',safety:'El NO₂ es tóxico. Solo en campana de extracción.'},
+{id:'limewater',r:['CaOH2','CO2'],name:'Agua de cal y dióxido de carbono',type:'Precipitación (ácido-base)',lhs:[[1,'Ca(OH)2'],[1,'CO2']],rhs:[[1,'CaCO3'],[1,'H2O']],to:[240,242,245,.8],fx:{},dT:1,
+ see:'El agua transparente se vuelve lechosa porque aparece carbonato de calcio.',
+ why:'El CO₂ disuelto actúa como un ácido débil y reacciona con los iones OH⁻ y Ca²⁺ del agua de cal. Se forma carbonato de calcio, que es insoluble y enturbia el líquido. Es la prueba clásica para detectar CO₂, por ejemplo en el aire que exhalamos.',
+ energy:'Casi sin cambio de temperatura.',safety:'Es poco peligrosa. Evita el contacto con los ojos.'}
+];
+const RXN=RX.map(x=>({...x,set:new Set(x.r)}));
+
+/* ===================== LABORATORIO: ESTADO ===================== */
+let chosen=[],lab={rx:null,t:0,state:'idle',parts:[],T:22,flash:0,heap:0,lvl:0,grains:[],gas:[]};
+function buildShelf(){
+  const sh=$('#shelf');sh.innerHTML='';
+  GRP.forEach(([t,ids])=>{
+    const h=document.createElement('h3');h.textContent=t;sh.appendChild(h);
+    const g=document.createElement('div');g.className='rgs';
+    ids.forEach(id=>{const r=RG[id];const b=document.createElement('button');b.type='button';b.className='rg';b.dataset.id=id;
+      b.innerHTML=`<b>${fmtF(r.f)}</b><span>${r.n} · ${STN[r.st]}</span>`;b.title=`${r.n} (${STN[r.st]})`;
+      b.addEventListener('click',()=>toggleRg(id));g.appendChild(b);});
+    sh.appendChild(g);
+  });
+}
+function toggleRg(id){
+  const i=chosen.indexOf(id);
+  if(i>=0)chosen.splice(i,1);
+  else{ if(chosen.length>=3){setStatus('El vaso admite hasta tres sustancias. Quita una para añadir otra.');return;} chosen.push(id);}
+  resetLab();renderChosen();
+  setStatus(chosen.length?(chosen.length<2?'Añade otra sustancia o pulsa Mezclar.':'Listo para mezclar.'):'Elige sustancias de la estantería.');
+}
+function renderChosen(){
+  const c=$('#chosen');c.innerHTML='';
+  if(!chosen.length)c.innerHTML='<span class="empty">El vaso está vacío.</span>';
+  chosen.forEach(id=>{const b=document.createElement('button');b.type='button';b.innerHTML=fmtF(RG[id].f)+' ✕';b.title='Quitar '+RG[id].n;b.addEventListener('click',()=>toggleRg(id));c.appendChild(b);});
+  $$('.rg').forEach(b=>b.setAttribute('aria-pressed',String(chosen.includes(b.dataset.id))));
+  $('#mixBtn').disabled=chosen.length===0;
+}
+function setStatus(t){$('#status').textContent=t;}
+function resetLab(){
+  lab.rx=null;lab.t=0;lab.state='idle';lab.parts=[];lab.T=22;lab.flash=0;lab.heap=0;
+  $('#result').innerHTML='';
+  // granos y gases
+  lab.grains=[];lab.gas=[];
+  chosen.forEach(id=>{const r=RG[id];
+    if(r.st==='s')for(let i=0;i<16;i++)lab.grains.push({id,x:Math.random(),y:Math.random(),s:4+Math.random()*5,a:Math.random()*3});
+    if(r.st==='g')for(let i=0;i<10;i++)lab.gas.push({id,x:Math.random(),y:Math.random(),p:Math.random()*6});});
+}
+function baseColor(){
+  const L=chosen.map(i=>RG[i]).filter(r=>r.st==='aq'||r.st==='l');if(!L.length)return null;
+  const s=[0,0,0,0];L.forEach(r=>r.col.forEach((v,k)=>s[k]+=v));return s.map(v=>v/L.length);
+}
+function findRx(){
+  let best=null;for(const r of RXN){if([...r.set].every(x=>chosen.includes(x))){if(!best||r.set.size>best.set.size)best=r;}}
+  return best;
+}
+function mix(){
+  if(!chosen.length)return;
+  const rx=findRx();
+  const keep=chosen.slice();resetLab();chosen=keep;
+  if(chosen.length<2){setStatus('Añade al menos otra sustancia para que pueda haber una reacción.');return;}
+  if(!rx){lab.state='none';lab.t=0;showNone();setStatus('Mezclado. No se observa ninguna reacción.');return;}
+  lab.rx=rx;lab.state='run';lab.t=0;lab.heap=0;
+  if(rx.fx.flash)lab.flash=1;
+  setStatus('Reaccionando…');
+  showResult(rx);
+}
+function showNone(){
+  const names=chosen.map(i=>fmtF(RG[i].f)).join(' + ');
+  const ex=RX.filter(x=>x.r.some(r=>chosen.includes(r))).slice(0,3);
+  const sug=ex.length?`<p>Sustancias de las que sí hay reacción: ${ex.map(x=>x.r.map(r=>fmtF(RG[r].f)).join(' + ')).join(' · ')}.</p>`:'';
+  $('#result').innerHTML=`<div class="box"><h3>${names}: no se observa reacción</h3>
+   <p>No hay cambio de color, ni burbujas, ni precipitado, ni cambio de temperatura. Hay varios motivos posibles: los iones de las sales solubles solo se mezclan y siguen disueltos, las sustancias no son químicamente compatibles, o falta energía de activación. Una reacción necesita que haya un camino que lleve a sustancias más estables. Esta simulación incluye ${RX.length} reacciones, no todas las que existen.</p>${sug}</div>`;
+}
+function showResult(rx){
+  const eq=side2html(rx);
+  let bal='';
+  if(!rx.skip){
+    const a=side(rx.lhs),b=side(rx.rhs),ks=[...new Set([...Object.keys(a),...Object.keys(b)])].sort();
+    bal=`<div class="box"><h3>Conservación de los átomos</h3><div class="tabScroll"><table class="bal"><tr><th>Átomo</th><th>Reactivos</th><th>Productos</th><th></th></tr>${ks.map(k=>`<tr><td>${k}</td><td>${a[k]||0}</td><td>${b[k]||0}</td><td class="ok">${a[k]===b[k]?'✓':'✗'}</td></tr>`).join('')}</table></div><p style="margin-top:8px">Los átomos no se crean ni se destruyen. Solo cambia cómo están unidos: por eso hay coeficientes delante de las fórmulas.</p></div>`;
+  }
+  $('#result').innerHTML=`<div><div class="eyebrow">${rx.type}</div><h2 style="margin:2px 0 8px">${rx.name}</h2><div class="eq">${eq}</div></div>
+   <div class="cols"><div class="box"><h3>Qué ves</h3><p>${rx.see}</p></div><div class="box"><h3>Qué pasa con los átomos</h3><p>${rx.why}</p></div></div>
+   <div class="cols"><div class="box"><h3>Energía${rx.ph?' y pH':''}</h3><p>${rx.energy}${rx.ph?' <b>'+rx.ph+'.</b>':''}</p></div>${bal}<div class="box warn"><h3>Seguridad</h3><p>${rx.safety}</p></div></div>`;
+}
+function side2html(rx){
+  const f=l=>l.map(([c,fm])=>(c>1?c:'')+fmtF(fm)).join(' <span class="co">+</span> ');
+  const ar=rx.cat?`<span class="arrow">→<small>${fmtF(rx.cat)}</small></span>`:'<span class="arrow">→</span>';
+  return f(rx.lhs)+ar+f(rx.rhs);
+}
+$('#mixBtn').addEventListener('click',mix);
+$('#clearBtn').addEventListener('click',()=>{chosen=[];resetLab();renderChosen();setStatus('Vaso vaciado.');});
+
+function buildSugg(){
+  const g=$('#suggGrid');
+  RX.filter(x=>!x.skip||x.id==='neutind').concat(RX.filter(x=>x.id==='ind')).forEach(x=>{
+    const b=document.createElement('button');b.type='button';b.className='sg';
+    b.innerHTML=`<b>${x.r.map(r=>fmtF(RG[r].f)).join(' + ')}</b><span>${x.name}</span>`;
+    b.addEventListener('click',()=>{chosen=x.r.slice();resetLab();renderChosen();mix();const s=$('.stage').getBoundingClientRect();if(s.top<0||s.top>innerHeight*.5)$('.stage').scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});});
+    g.appendChild(b);
+  });
+}
+
+/* ===================== LABORATORIO: DIBUJO ===================== */
+const labCv=$('#labCv'),lctx=labCv.getContext('2d');
+const BX=110,BW=180,BT=90,BB=380;
+const lerpC=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+const rgba=c=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${c[3]})`;
+const ease=t=>t*t*(3-2*t);
+function emit(k,o){lab.parts.push({k,...o});}
+function stepLab(dt){
+  const rx=lab.rx;
+  if(lab.state==='run'||lab.state==='done'){
+    lab.t+=dt;const p=Math.min(1,lab.t/3.5);
+    if(lab.state==='run'&&lab.t>=5){lab.state='done';setStatus('Reacción terminada. Lee la explicación de abajo.');}
+    const act=lab.t<5?1:(lab.t<7?Math.max(0,1-(lab.t-5)/2):0);
+    const f=rx.fx,top=BB-(BB-BT)*lab.lvl,n=(r)=>{const v=r*dt;return Math.floor(v)+(Math.random()<v%1?1:0);};
+    if(f.bub&&lab.lvl>.05)for(let i=n(f.bub*45*(1-.5*p)*act);i>0;i--)emit('b',{x:BX+16+Math.random()*(BW-32),y:BB-8,vy:-(40+Math.random()*50),r:2+Math.random()*3.5,w:Math.random()*6});
+    if(f.prec&&p<.92&&lab.lvl>.05)for(let i=n(70*act);i>0;i--)emit('p',{x:BX+14+Math.random()*(BW-28),y:top+6+Math.random()*10,vy:35+Math.random()*40,r:1.8+Math.random()*2.2,c:f.prec});
+    if(f.foam&&lab.t<4)for(let i=n(55*act);i>0;i--)emit('f',{x:BX+14+Math.random()*(BW-28),y:top-4,vy:-(80+Math.random()*60),r:7+Math.random()*10,life:1,max:Math.max(30,BT-(BT-30)*Math.min(1,lab.t/2.5)-60)});
+    if(f.flame&&act>0)for(let i=n(55*act);i>0;i--)emit('fl',{x:BX+30+Math.random()*(BW-60),y:(lab.lvl>.05?top:BB-30)+4,vy:-(50+Math.random()*60),r:6+Math.random()*12,life:1,c:f.flame});
+    if(f.vapor&&act>0)for(let i=n(14*act);i>0;i--)emit('v',{x:BX+30+Math.random()*(BW-60),y:top,vy:-(18+Math.random()*16),r:12+Math.random()*10,life:1,c:f.vapor});
+    lab.T=22+rx.dT*ease(p);
+    if(f.flash)lab.flash=Math.max(0,lab.flash-dt*1.6);
+  }
+  const target=(()=>{const L=chosen.map(i=>RG[i]).filter(r=>r.st==='aq'||r.st==='l').length;return [0,.5,.6,.68][L];})();
+  lab.lvl+=(target-lab.lvl)*Math.min(1,dt*6);
+  const heapMax=40;
+  lab.parts=lab.parts.filter(q=>{
+    if(q.k==='b'){q.y+=q.vy*dt;q.x+=Math.sin(lab.t*6+q.w)*10*dt;return q.y>BB-(BB-BT)*lab.lvl;}
+    if(q.k==='p'){q.y+=q.vy*dt;const hb=BB-Math.min(heapMax,lab.heap*.05)-3;if(q.y>=hb){lab.heap++;return false;}return true;}
+    if(q.k==='f'){q.y+=q.vy*dt;q.vy*=.985;q.life-=dt*.25;return q.life>0&&q.y>q.max-10;}
+    if(q.k==='fl'){q.y+=q.vy*dt;q.life-=dt*1.6;q.r*=.995;return q.life>0;}
+    if(q.k==='v'){q.y+=q.vy*dt;q.r+=dt*8;q.life-=dt*.3;q.x+=Math.sin(lab.t+q.r)*6*dt;return q.life>0;}
+    return false;});
+}
+function drawLab(ts){
+  const c=labCv,W=c.width;if(!W)return;
+  const x=lctx,s=W/400;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,c.width,c.height);x.setTransform(s,0,0,s,0,0);
+  const line=cssv('--fg'),mut=cssv('--muted'),rx=lab.rx;
+  const p=lab.state==='run'||lab.state==='done'?Math.min(1,lab.t/3.5):0;
+  const top=BB-(BB-BT)*lab.lvl;
+  // fondo mesa
+  x.fillStyle=cssv('--surface');x.fillRect(0,BB+6,400,60);
+  x.strokeStyle=cssv('--line');x.lineWidth=2;x.beginPath();x.moveTo(0,BB+6);x.lineTo(400,BB+6);x.stroke();
+  // gases en el aire
+  const gp=lab.state==='run'||lab.state==='done'?Math.max(0,1-p*1.4):1;
+  lab.gas.forEach(g=>{const col=RG[g.id].col;const tt=ts/1000;
+    const gx=BX+12+((g.x*BW*.9+Math.sin(tt*.8+g.p)*10+BW)%(BW-24)),gy=BT+14+((g.y*(top-BT-30)<0?0:g.y*Math.max(10,top-BT-30))+Math.cos(tt*.7+g.p)*8);
+    x.fillStyle=rgba([col[0],col[1],col[2],.55*gp]);x.beginPath();x.arc(gx,Math.min(gy,BB-12),3,0,7);x.fill();});
+  // líquido
+  const base=baseColor();let lc=base;
+  if(rx&&base!==null||(rx&&lab.lvl>.05)){const from=rx.from||base||CLEAR;lc=lerpC(from,rx.to,ease(p));}
+  if(lab.lvl>.01&&lc){
+    const g=x.createLinearGradient(0,top,0,BB);g.addColorStop(0,rgba([lc[0],lc[1],lc[2],Math.min(1,lc[3]*.85)]));g.addColorStop(1,rgba([lc[0]*.85,lc[1]*.85,lc[2]*.9,Math.min(1,lc[3]*1.1)]));
+    x.fillStyle=g;x.beginPath();x.moveTo(BX+2,top);x.lineTo(BX+BW-2,top);x.lineTo(BX+BW-2,BB-14);x.quadraticCurveTo(BX+BW-2,BB-2,BX+BW-16,BB-2);x.lineTo(BX+16,BB-2);x.quadraticCurveTo(BX+2,BB-2,BX+2,BB-14);x.closePath();x.fill();
+    x.fillStyle='rgba(255,255,255,.28)';x.fillRect(BX+2,top,BW-4,2);
+  }
+  // precipitado
+  if(lab.heap>0&&rx&&rx.fx.prec){const h=Math.min(40,lab.heap*.05);x.fillStyle=rgba([...rx.fx.prec,.95]);x.beginPath();x.roundRect(BX+4,BB-3-h,BW-8,h,6);x.fill();}
+  // granos sólidos
+  const shrink=lab.state==='idle'||lab.state==='none'?1:1-.85*ease(p);
+  lab.grains.forEach(g=>{const col=RG[g.id].col,sz=g.s*shrink;if(sz<.6)return;
+    const gx=BX+14+g.x*(BW-28),gy=BB-6-g.y*12;x.fillStyle=rgba(col);x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=.8;
+    x.save();x.translate(gx,gy);x.rotate(g.a);x.beginPath();x.rect(-sz/2,-sz/2,sz,sz*.8);x.fill();x.stroke();x.restore();});
+  // partículas
+  lab.parts.forEach(q=>{
+    if(q.k==='b'){x.strokeStyle='rgba(255,255,255,.85)';x.fillStyle='rgba(255,255,255,.25)';x.lineWidth=1;x.beginPath();x.arc(q.x,q.y,q.r,0,7);x.fill();x.stroke();}
+    else if(q.k==='p'){x.fillStyle=rgba([...q.c,.95]);x.beginPath();x.arc(q.x,q.y,q.r,0,7);x.fill();}
+    else if(q.k==='f'){x.fillStyle=`rgba(255,250,235,${.8*q.life})`;x.strokeStyle=`rgba(210,190,140,${.6*q.life})`;x.beginPath();x.arc(q.x,q.y,q.r,0,7);x.fill();x.stroke();}
+    else if(q.k==='fl'){const g=x.createRadialGradient(q.x,q.y,0,q.x,q.y,q.r*1.6);g.addColorStop(0,`rgba(255,255,255,${.9*q.life})`);g.addColorStop(.4,`rgba(${q.c[0]},${q.c[1]},${q.c[2]},${.8*q.life})`);g.addColorStop(1,`rgba(${q.c[0]},${q.c[1]},${q.c[2]},0)`);x.fillStyle=g;x.beginPath();x.arc(q.x,q.y,q.r*1.6,0,7);x.fill();}
+    else if(q.k==='v'){x.fillStyle=`rgba(${q.c[0]},${q.c[1]},${q.c[2]},${.35*q.life})`;x.beginPath();x.arc(q.x,q.y,q.r,0,7);x.fill();}
+  });
+  // brillo de combustión
+  if(rx&&rx.fx.glow&&lab.t<5){const gl=rx.fx.glow*(lab.t<.2?lab.t/.2:Math.max(0,1-(lab.t-1.5)/3.5)),gy=lab.lvl>.05?top-10:BB-60,col=rx.fx.flame;
+    const g=x.createRadialGradient(200,gy,0,200,gy,130);g.addColorStop(0,`rgba(255,255,255,${.9*gl})`);g.addColorStop(.35,`rgba(${col[0]},${col[1]},${col[2]},${.45*gl})`);g.addColorStop(1,`rgba(${col[0]},${col[1]},${col[2]},0)`);x.fillStyle=g;x.fillRect(0,0,400,440);}
+  // vaso
+  x.strokeStyle=line;x.lineWidth=3;x.lineJoin='round';x.lineCap='round';
+  x.beginPath();x.moveTo(BX-8,BT-8);x.lineTo(BX,BT);x.lineTo(BX,BB-16);x.quadraticCurveTo(BX,BB,BX+16,BB);x.lineTo(BX+BW-16,BB);x.quadraticCurveTo(BX+BW,BB,BX+BW,BB-16);x.lineTo(BX+BW,BT);x.lineTo(BX+BW+8,BT-8);x.stroke();
+  x.fillStyle='rgba(255,255,255,.12)';x.fillRect(BX+8,BT+10,6,BB-BT-40);
+  // graduaciones (mL)
+  x.font='11px IBM Plex Mono, monospace';x.fillStyle=mut;x.strokeStyle=mut;x.lineWidth=1.5;x.textAlign='left';
+  [50,100,150,200].forEach(v=>{const y=BB-(v/250)*(BB-BT);x.beginPath();x.moveTo(BX+BW,y);x.lineTo(BX+BW-16,y);x.stroke();x.fillText(v,BX+BW-44,y-3);});
+  x.fillText('mL',BX+BW-44,BT+18);
+  x.textAlign='center';x.fillText('Vaso de precipitados 250 mL',BX+BW/2,BB+28);
+  // termómetro
+  const tx=340,tt=130,tb=BB-10,tf=Math.max(0,Math.min(1,(lab.T-10)/100));
+  x.strokeStyle=line;x.lineWidth=2.5;x.beginPath();x.moveTo(tx-5,tt);x.lineTo(tx-5,tb-8);x.arc(tx,tb+2,11,Math.PI*1.2,Math.PI*1.8,true);x.lineTo(tx+5,tt);x.arc(tx,tt,5,0,Math.PI,true);x.stroke();
+  const th=(tb-tt)*tf;x.fillStyle='#e0463c';x.beginPath();x.arc(tx,tb+2,8,0,7);x.fill();x.fillRect(tx-2.5,tb-th,5,th+4);
+  x.fillStyle=line;x.font='600 13px IBM Plex Mono, monospace';x.textAlign='center';x.fillText(Math.round(lab.T)+' °C',tx,tt-18);
+  x.fillStyle=mut;x.font='10px IBM Plex Sans, sans-serif';x.fillText('Temperatura',tx,tt-6);
+  // destello
+  if(lab.flash>0){x.fillStyle=`rgba(255,255,255,${.85*lab.flash})`;x.fillRect(0,0,400,440);}
+  // texto
+  if(lab.state==='idle'&&!chosen.length){x.fillStyle=mut;x.font='13px IBM Plex Sans, sans-serif';x.textAlign='center';x.fillText('Elige sustancias de la estantería',BX+BW/2,BB-120);}
+}
+let last=0;
+function frame(ts){
+  const dt=Math.min(.05,(ts-last)/1000||0);last=ts;
+  if(!$('#tab-tabla').hidden)drawAtom(ts);
+  if(!$('#tab-laboratorio').hidden){stepLab(dt);drawLab(ts);}
+  requestAnimationFrame(frame);
+}
+
+/* ===================== CONCEPTOS ===================== */
+const CARDS=[
+['El átomo','<p>Todo está hecho de átomos. Cada átomo tiene un núcleo con <b>protones</b> (carga +) y <b>neutrones</b> (sin carga), rodeado de <b>electrones</b> (carga −) en capas.</p><p>El número de protones (Z) define el elemento. Un átomo neutro tiene tantos electrones como protones.</p>'],
+['Electrones de valencia','<p>Son los de la capa más externa. Son los que se ceden, se ganan o se comparten al reaccionar.</p><p>Los átomos tienden a quedar con la última capa llena (regla del octeto), como los gases nobles.</p>'],
+['Tipos de enlace','<p><b>Iónico:</b> un átomo cede electrones y otro los gana (NaCl). <b>Covalente:</b> comparten electrones (H₂O). <b>Metálico:</b> los electrones se mueven libres entre los átomos (Cu).</p><p>La diferencia de electronegatividad entre los átomos decide cuál aparece.</p>'],
+['Qué es una reacción','<p>Los reactivos rompen sus enlaces y los átomos se reordenan en productos. Los átomos se conservan, por eso la ecuación debe estar <b>balanceada</b>.</p><p>Evidencias: cambio de color, burbujas, precipitado, luz o cambio de temperatura.</p>'],
+['Tipos de reacción','<p><b>Síntesis:</b> A + B → AB. <b>Descomposición:</b> AB → A + B. <b>Desplazamiento simple:</b> A + BC → AC + B. <b>Doble desplazamiento:</b> AB + CD → AD + CB. <b>Combustión:</b> algo + O₂ → CO₂ + H₂O.</p><p>Una <b>redox</b> es toda reacción con transferencia de electrones.</p>'],
+['Ácidos, bases y pH','<p>Los ácidos liberan H⁺ y las bases liberan OH⁻. El pH mide la acidez: 7 es neutro, menos de 7 es ácido y más de 7 es básico.</p><p>Cada unidad de pH es un factor 10 en la concentración de H⁺.</p>'],
+['Energía en las reacciones','<p>Romper enlaces cuesta energía y formarlos la libera. Si se libera más de la que se gasta, la reacción es <b>exotérmica</b> (se calienta). Si es al revés, <b>endotérmica</b> (se enfría).</p><p>Un <b>catalizador</b> acelera la reacción sin consumirse.</p>'],
+['Seguridad en el laboratorio','<p>Gafas, bata y guantes siempre. Los ácidos se añaden al agua, nunca al revés. No pruebes ni huelas directamente las sustancias. Trabaja con ventilación y avisa de cualquier derrame.</p><p>Esta página es una simulación: no sustituye a un laboratorio con supervisión.</p>']
+];
+function buildCards(){
+  const c=$('#cards');
+  CARDS.forEach(([t,h])=>{const d=document.createElement('div');d.className='card';d.innerHTML=`<h3>${t}</h3>${h}`;c.appendChild(d);});
+  const d=document.createElement('div');d.className='card';
+  d.innerHTML=`<h3>Calculadora de masa molar</h3><p>Escribe una fórmula y obtén cuántos gramos pesa un mol de esa sustancia (usa mayúsculas y minúsculas, por ejemplo <span class="mono">Ca(OH)2</span>).</p>
+  <div class="calc"><input id="molIn" value="Ca(OH)2" aria-label="Fórmula química" autocomplete="off" spellcheck="false"></div><div id="molOut" aria-live="polite"></div>`;
+  c.appendChild(d);
+  const run=()=>{
+    const out=$('#molOut');
+    try{
+      const f=$('#molIn').value.trim();if(!f){out.innerHTML='<p>Escribe una fórmula.</p>';return;}
+      const p=parseF(f);let tot=0;const rows=Object.entries(p).map(([k,n])=>{const e=BYSYM[k];if(!e)throw new Error('Símbolo desconocido: '+k);tot+=e.m*n;return `${n} × ${k} (${e.m.toFixed(3)})`;});
+      out.innerHTML=`<p><b class="mono" style="font-size:1.2rem">${tot.toFixed(3)} g/mol</b></p><p class="mono" style="font-size:.8rem">${rows.join(' + ')}</p>`;
+    }catch(err){out.innerHTML=`<p style="color:var(--bad)">${err.message}</p>`;}
+  };
+  $('#molIn').addEventListener('input',run);run();
+}
+
+/* ===================== INICIO ===================== */
+buildTable();buildShelf();buildSugg();buildCards();renderChosen();resetLab();
+selectEl(BYSYM.C);
+setStatus('Elige sustancias de la estantería.');
+sizeCanvases();addEventListener('resize',sizeCanvases);
+showTab(location.hash.slice(1));
+requestAnimationFrame(frame);
+</script>
+
+</body></html>
